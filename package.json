@@ -1,0 +1,25 @@
+{
+  "name": "cubx-dependency-resolver",
+  "version": "1.0.0",
+  "description": "Npm package to resolve the dependencies of a list of artifacts",
+  "main": "cubx-dependency-resolver.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cubbles/cubx-dependency-resolver.git"
+  },
+  "keywords": [
+    "Dependency",
+    "Resolver",
+    "Cubbles",
+    "Artifacts"
+  ],
+  "author": "Eddwin Gamboa",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cubbles/cubx-dependency-resolver/issues"
+  },
+  "homepage": "https://github.com/cubbles/cubx-dependency-resolver#readme"
+}
