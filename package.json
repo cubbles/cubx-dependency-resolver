@@ -21,5 +21,30 @@
   "bugs": {
     "url": "https://github.com/cubbles/cubx-dependency-resolver/issues"
   },
-  "homepage": "https://github.com/cubbles/cubx-dependency-resolver#readme"
+  "homepage": "https://github.com/cubbles/cubx-dependency-resolver#readme",
+  "devDependencies": {
+    "mocha": "^5.2.0",
+    "chai": "^4.1.2",
+    "eslint": "^4.19.1",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^3.1.0",
+    "grunt": "^1.0.2",
+    "grunt-githooks": "^0.6.0",
+    "grunt-shell": "^2.1.0",
+    "ink-docstrap": "^1.1.1",
+    "jsdoc": "^3.4.0",
+    "load-grunt-configs": "^1.0.0",
+    "load-grunt-tasks": "^4.0.0",
+    "proxyquire": "^2.0.1",
+    "sinon": "^5.0.7",
+    "sinon-chai": "^3.0.0",
+    "time-grunt": "~1.4.0"
+  },
+  "dependencies": {
+    "command-line-args": "^5.0.2",
+    "fs-extra": "^6.0.1",
+    "path": "^0.12.7",
+    "_axios": "^0.18.0"
+  }
 }
