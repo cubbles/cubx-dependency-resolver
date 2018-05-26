@@ -398,6 +398,18 @@
           expect(consoleSpy).to.be.calledOnce;
         });
       });
+    });
+    describe('#_storeManifestFiles()', function () {
+      var cacheAddItemSpy;
+      before(function () {
+        artifactsDepsResolver = new ArtifactsDepsResolver();
+        cacheAddItemSpy = sinon.spy(artifactsDepsResolver._responseCache, 'addItem');
+      });
+      it('should call \'addItem\' method from \'_responseCache\'', function () {
+        var pk1Manifest = JSON.parse(pkg1);
+        artifactsDepsResolver._storeManifestFiles(pk1Manifest, pk1Manifest.artifacts.utilities[0].artifactId);
+        cacheAddItemSpy.should.be.calledWith(pk1Manifest.artifacts.utilities[0].artifactId, pk1Manifest)
+      });
     })
   });
 })();
