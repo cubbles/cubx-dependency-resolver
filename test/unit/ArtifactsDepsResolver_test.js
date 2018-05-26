@@ -24,6 +24,8 @@
       pkg4 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage4.json'), 'utf8');
       pkg5 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage5.json'), 'utf8');
       pkg6 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage6.json'), 'utf8');
+    });
+    beforeEach(function () {
       rootDepList = JSON.parse(fs.readFileSync(path.join(resourcesPath, 'rootDependencies.json'), 'utf8'));
     });
     describe('#_buildRawDependencyTree', function () {
@@ -307,6 +309,21 @@
             error.should.have.ownProperty('message');
           });
         });
+      });
+    });
+    describe('#_extractArtifact', function () {
+      var depRefItem;
+      before(function () {
+        artifactsDepsResolver = new ArtifactsDepsResolver();
+        depRefItem = new DepReference({webpackageId: 'package1@1.0.0', artifactId: 'util1', referrer: null})
+      });
+      it('should return require artifact', function () {
+        var artifact = artifactsDepsResolver._extractArtifact(depRefItem, JSON.parse(pkg1));
+        expect(artifact).to.deep.equal(JSON.parse(pkg1).artifacts.utilities[0]);
+      });
+      it('should return null since artifact is not in manifest', function () {
+        var artifact = artifactsDepsResolver._extractArtifact(depRefItem, JSON.parse(pkg2));
+        expect(artifact).to.be.undefined;
       });
     });
     describe('#_createDepReferenceListFromArtifactDependencies()', function () {
