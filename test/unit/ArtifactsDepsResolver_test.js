@@ -28,7 +28,7 @@
     beforeEach(function () {
       rootDepList = JSON.parse(fs.readFileSync(path.join(resourcesPath, 'rootDependencies.json'), 'utf8'));
     });
-    describe('#_buildRawDependencyTree', function () {
+    describe('#buildRawDependencyTree', function () {
       var baseUrl;
       var stub;
       before(function () {
@@ -95,11 +95,11 @@
         stub.restore();
       });
       it('should return a promise', function () {
-        expect(artifactsDepsResolver._buildRawDependencyTree(rootDepList, baseUrl)).to.be.an.instanceOf(Promise);
+        expect(artifactsDepsResolver.buildRawDependencyTree(rootDepList, baseUrl)).to.be.an.instanceOf(Promise);
       });
       it('should resolve the returned promise with an instance of DependencyTree', function () {
         this.timeout(15000);
-        return artifactsDepsResolver._buildRawDependencyTree(rootDepList, baseUrl).then(function (result) {
+        return artifactsDepsResolver.buildRawDependencyTree(rootDepList, baseUrl).then(function (result) {
           result.should.be.an.instanceOf(DependencyTree);
         });
       });
@@ -118,7 +118,7 @@
          *              |                                                       |
          *      package6@1.0.0/util6                                  package6@1.0.0/util6
          */
-        return artifactsDepsResolver._buildRawDependencyTree(rootDepList, baseUrl).then(function (tree) {
+        return artifactsDepsResolver.buildRawDependencyTree(rootDepList, baseUrl).then(function (tree) {
           expect(tree._rootNodes).to.have.lengthOf(2);
           // check first (root) level of tree
           expect(tree._rootNodes[0].data.getId()).to.equal('package1@1.0.0/util1');
@@ -140,14 +140,14 @@
       describe('Error Handling', function () {
         it('should throw an TypeError if \'dependencies\' parameter is not an Array', function () {
           try {
-            artifactsDepsResolver._buildRawDependencyTree({});
+            artifactsDepsResolver.buildRawDependencyTree({});
           } catch (error) {
             expect(error).to.be.an.instanceOf(TypeError);
           }
         });
         it('should reject returned promise if there is an error resolving single depenencies', function () {
           rootDepList.push({webpackageId: 'error', artifactId: 'util'});
-          return artifactsDepsResolver._buildRawDependencyTree(rootDepList, baseUrl).then(function (result) {
+          return artifactsDepsResolver.buildRawDependencyTree(rootDepList, baseUrl).then(function (result) {
             throw new Error('Promise was unexpectedly fulfilled. Result: ' + result);
           }, function (error) {
             error.should.have.ownProperty('message', 'Error while resolving...');
