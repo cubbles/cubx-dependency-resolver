@@ -311,7 +311,7 @@
         });
       });
     });
-    describe('#_extractArtifact', function () {
+    describe('#_extractArtifact()', function () {
       var depRefItem;
       before(function () {
         artifactsDepsResolver = new ArtifactsDepsResolver();
@@ -354,5 +354,50 @@
         item.referrer[0].should.equal('root');
       });
     });
+    describe('#_determineWebpackageId()', function () {
+      var referrer;
+      var dependency;
+      before(function () {
+        artifactsDepsResolver = new ArtifactsDepsResolver();
+        referrer = {
+          webpackageId: 'testWebpackagePackageId',
+          artifactId: 'testArtifactId'
+        };
+      });
+      it('should determine webpackageId from dependency', function () {
+        dependency = {
+          webpackageId: 'testWebpackagePackageId2',
+          artifactId: 'testArtifactId2'
+        };
+        var webpackageId = artifactsDepsResolver._determineWebpackageId(dependency, referrer);
+        expect(webpackageId).to.be.equal(dependency.webpackageId)
+      });
+      it('should determine webpackageId from referrer', function () {
+        dependency = {};
+        var webpackageId = artifactsDepsResolver._determineWebpackageId(dependency, referrer);
+        expect(webpackageId).to.be.equal(referrer.webpackageId)
+      });
+      describe('Error Handling', function () {
+        var consoleSpy;
+        before(function () {
+          dependency = {};
+          referrer = null;
+        });
+        beforeEach(function () {
+          consoleSpy = sinon.spy(console, 'error');
+        });
+        afterEach(function () {
+          consoleSpy.restore();
+        });
+        it('should return \'\'since webpackageId could not be determined', function () {
+          var webpackageId = artifactsDepsResolver._determineWebpackageId(dependency, referrer);
+          expect(webpackageId).to.be.equal('');
+        });
+        it('should log an error since webpackageId could not be determined', function () {
+          artifactsDepsResolver._determineWebpackageId(dependency, referrer);
+          expect(consoleSpy).to.be.calledOnce;
+        });
+      });
+    })
   });
 })();
