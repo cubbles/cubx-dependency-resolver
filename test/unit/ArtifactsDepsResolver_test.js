@@ -1,4 +1,4 @@
-/* globals describe, beforeEach, it, expect, before, __dirname */
+/* globals describe, beforeEach, afterEach, it, expect, before, __dirname, sinon, after */
 (function () {
   'use strict';
   describe('ArtifactsDepsResolver', function () {
@@ -169,7 +169,7 @@
       });
       it('should call _axios.request method with given url', function (done) {
         artifactsDepsResolver._fetchManifest('https://www.example.test').then(function () {
-          expect(axiosStub.calledWith({url: 'https://www.example.test'})).to.be.true;
+          expect(axiosStub.calledWith({url: 'https://www.example.test'})).to.be.equal(true);
           done();
         });
       });
@@ -183,7 +183,6 @@
     });
     describe('#_resolveDepReferenceDependencies()', function () {
       var _fetchManifestStub;
-      var convertManifestStub;
       var depRefItem;
       var baseUrl;
 
@@ -315,7 +314,7 @@
       var depRefItem;
       before(function () {
         artifactsDepsResolver = new ArtifactsDepsResolver();
-        depRefItem = new DepReference({webpackageId: 'package1@1.0.0', artifactId: 'util1', referrer: null})
+        depRefItem = new DepReference({webpackageId: 'package1@1.0.0', artifactId: 'util1', referrer: null});
       });
       it('should return require artifact', function () {
         var artifact = artifactsDepsResolver._extractArtifact(depRefItem, JSON.parse(pkg1));
@@ -323,7 +322,7 @@
       });
       it('should return null since artifact is not in manifest', function () {
         var artifact = artifactsDepsResolver._extractArtifact(depRefItem, JSON.parse(pkg2));
-        expect(artifact).to.be.undefined;
+        expect(artifact).to.be.equal(undefined);
       });
     });
     describe('#_createDepReferenceListFromArtifactDependencies()', function () {
@@ -370,12 +369,12 @@
           artifactId: 'testArtifactId2'
         };
         var webpackageId = artifactsDepsResolver._determineWebpackageId(dependency, referrer);
-        expect(webpackageId).to.be.equal(dependency.webpackageId)
+        expect(webpackageId).to.be.equal(dependency.webpackageId);
       });
       it('should determine webpackageId from referrer', function () {
         dependency = {};
         var webpackageId = artifactsDepsResolver._determineWebpackageId(dependency, referrer);
-        expect(webpackageId).to.be.equal(referrer.webpackageId)
+        expect(webpackageId).to.be.equal(referrer.webpackageId);
       });
       describe('Error Handling', function () {
         var consoleSpy;
@@ -395,7 +394,7 @@
         });
         it('should log an error since webpackageId could not be determined', function () {
           artifactsDepsResolver._determineWebpackageId(dependency, referrer);
-          expect(consoleSpy).to.be.calledOnce;
+          expect(consoleSpy).to.be.calledOnce; // eslint-disable-line no-unused-expressions
         });
       });
     });
@@ -408,8 +407,8 @@
       it('should call \'addItem\' method from \'_responseCache\'', function () {
         var pk1Manifest = JSON.parse(pkg1);
         artifactsDepsResolver._storeManifestFiles(pk1Manifest, pk1Manifest.artifacts.utilities[0].artifactId);
-        cacheAddItemSpy.should.be.calledWith(pk1Manifest.artifacts.utilities[0].artifactId, pk1Manifest)
+        cacheAddItemSpy.should.be.calledWith(pk1Manifest.artifacts.utilities[0].artifactId, pk1Manifest);
       });
-    })
+    });
   });
 })();

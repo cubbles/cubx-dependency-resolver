@@ -4,7 +4,9 @@
   "description": "Npm package to resolve the dependencies of a list of artifacts",
   "main": "cubx-dependency-resolver.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepublish": "npm run-script lint",
+    "lint": "eslint lib/**/*.js bin/**/*.js test/unit/**/*.js *.js",
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
@@ -23,10 +25,11 @@
   },
   "homepage": "https://github.com/cubbles/cubx-dependency-resolver#readme",
   "devDependencies": {
-    "mocha": "^5.2.0",
     "chai": "^4.1.2",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-import": "^2.12.0",
+    "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.5.0",
     "eslint-plugin-standard": "^3.1.0",
     "grunt": "^1.0.2",
@@ -36,15 +39,15 @@
     "jsdoc": "^3.4.0",
     "load-grunt-configs": "^1.0.0",
     "load-grunt-tasks": "^4.0.0",
+    "mocha": "^5.2.0",
     "proxyquire": "^2.0.1",
     "sinon": "^5.0.7",
     "sinon-chai": "^3.0.0",
-    "time-grunt": "~1.4.0"
+    "time-grunt": "~1.4.0",
+    "fs-extra": "^6.0.1"
   },
   "dependencies": {
-    "command-line-args": "^5.0.2",
-    "fs-extra": "^6.0.1",
     "path": "^0.12.7",
-    "_axios": "^0.18.0"
+    "axios": "^0.18.0"
   }
 }

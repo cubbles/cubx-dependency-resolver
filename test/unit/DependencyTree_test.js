@@ -1,9 +1,7 @@
-/* globals describe, beforeEach, it, expect, before, __dirname */
+/* globals describe, beforeEach, expect, it, __dirname */
 (function () {
   'use strict';
   describe('DependencyTree', function () {
-    var fs = require('fs-extra');
-    var path = require('path');
     var DependencyTree = require('../../lib/DependencyTree');
     var DepReference = require('../../lib/DepReference');
     var packages;
@@ -86,7 +84,7 @@
         childB1.excluded = false;
 
         depTree._removeDuplicate(childA1, childB1);
-        childA1.excluded.should.be.false;
+        expect(childA1.excluded).to.be.equal(false);
       });
       it('should keep excluded value true of duplicated node if duplicate node has excluded value of true as well', function () {
         // set excluded flag for several nodes
@@ -98,7 +96,7 @@
         childB111.excluded = true;
 
         depTree._removeDuplicate(childA1, childB1);
-        childA1.excluded.should.be.true;
+        expect(childA1.excluded).to.be.equal(true);
       });
       it('should keep excluded value false of duplicated node if duplicate node has excluded value of false as well', function () {
         // set excluded flag for several nodes
@@ -106,7 +104,7 @@
         childB1.excluded = false;
 
         depTree._removeDuplicate(childA1, childB1);
-        childA1.excluded.should.be.false;
+        expect(childA1.excluded).to.be.equal(false);
       });
       it('should keep excluded value false of duplicated node if duplicate node has excluded value of true', function () {
         // set excluded flag for several nodes
@@ -116,7 +114,7 @@
         childB111.excluded = true;
 
         depTree._removeDuplicate(childA1, childB1);
-        childA1.excluded.should.be.false;
+        expect(childA1.excluded).to.be.equal(false);
       });
       it('should only mark nodes as excluded if they are excluded in subtree of duplicated node as well as in ' +
         'subtree of duplicate node', function () {
@@ -126,8 +124,8 @@
         childB111.excluded = true;
 
         depTree._removeDuplicate(childA1, childB1);
-        childA11.excluded.should.be.false;
-        childA111.excluded.should.be.true;
+        expect(childA11.excluded).to.be.equal(false);
+        expect(childA111.excluded).to.be.equal(true);
       });
       it('should append referrer of removed duplicate node to referrer of duplicated nodes', function () {
         depTree._removeDuplicate(childA1, childB1);
