@@ -15,22 +15,24 @@
     var pkg4;
     var pkg5;
     var pkg6;
+    before(function () {
+      resourcesPath = path.join(__dirname, '../resources');
+      pkg1 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage1.json'), 'utf8');
+      pkg2 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage2.json'), 'utf8');
+      pkg3 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage3.json'), 'utf8');
+      pkg4 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage4.json'), 'utf8');
+      pkg5 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage5.json'), 'utf8');
+      pkg6 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage6.json'), 'utf8');
+    });
 
     describe('#_buildRawDependencyTree', function () {
       var rootDepList;
       var baseUrl;
       var stub;
       before(function () {
-        resourcesPath = path.join(__dirname, '../resources');
         rootDepList = JSON.parse(fs.readFileSync(path.join(resourcesPath, 'rootDependencies.json'), 'utf8'));
         baseUrl = 'https://cubbles.world/sandbox/';
         artifactsDepsResolver = new ArtifactsDepsResolver();
-        pkg1 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage1.json'), 'utf8');
-        pkg2 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage2.json'), 'utf8');
-        pkg3 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage3.json'), 'utf8');
-        pkg4 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage4.json'), 'utf8');
-        pkg5 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage5.json'), 'utf8');
-        pkg6 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage6.json'), 'utf8');
         stub = sinon.stub(artifactsDepsResolver, '_resolveDepReferenceDependencies').callsFake(function (dep) {
           return new Promise(function (resolve, reject) {
             var requestedPkg;
@@ -176,6 +178,136 @@
       });
       after(function () {
         axiosStub.restore();
+      });
+    });
+    describe('#_resolveDepReferenceDependencies()', function () {
+      var _fetchManifestStub;
+      var convertManifestStub;
+      var depRefItem;
+      var baseUrl;
+
+      before(function () {
+        artifactsDepsResolver = new ArtifactsDepsResolver();
+        baseUrl = 'https://cubbles.world/sandbox/';
+      });
+      beforeEach(function () {
+        artifactsDepsResolver._responseCache.invalidate();
+        depRefItem = new DepReference({webpackageId: 'package1@1.0.0', artifactId: 'util1', referrer: null});
+        // mock _fetchManifest method
+        _fetchManifestStub = sinon.stub(artifactsDepsResolver, '_fetchManifest').callsFake(function (url) {
+          return new Promise(function (resolve, reject) {
+            var response = {};
+            if (url.indexOf('package1@1.0.0') >= 0) {
+              response.data = JSON.parse(pkg1);
+            }
+            if (url.indexOf('package2@1.0.0') >= 0) {
+              response.data = JSON.parse(pkg2);
+            }
+            if (url.indexOf('package3@1.0.0') >= 0) {
+              response.data = JSON.parse(pkg3);
+            }
+            if (url.indexOf('package4@1.0.0') >= 0) {
+              response.data = JSON.parse(pkg4);
+            }
+            if (url.indexOf('package5@1.0.0') >= 0) {
+              response.data = JSON.parse(pkg5);
+            }
+            if (url.indexOf('package6@1.0.0') >= 0) {
+              response.data = JSON.parse(pkg6);
+            }
+            if (response.hasOwnProperty('data')) {
+              setTimeout(function () {
+                resolve(response);
+              }, 200);
+            } else {
+              setTimeout(function () {
+                reject({message: 'Error while requesting ' + url}); // eslint-disable-line prefer-promise-reject-errors
+              }, 100);
+            }
+          });
+        });
+      });
+      afterEach(function () {
+        _fetchManifestStub.restore();
+      });
+      it('should return a promise', function () {
+        expect(artifactsDepsResolver._resolveDepReferenceDependencies(depRefItem, baseUrl)).to.be.an.instanceOf(Promise);
+      });
+      it('should resolve the returned promise with an object containing an array of the dependencies of given depRef item and all the resources for the given depRefItem', function () {
+        return artifactsDepsResolver._resolveDepReferenceDependencies(depRefItem, baseUrl).then(function (result) {
+          result.should.be.an.instanceOf(Object);
+          result.should.have.property('resources');
+          result.should.have.property('dependencies');
+          result.resources.should.eql(['js/pack1.js', 'css/pack1.css']);
+          result.dependencies.should.have.lengthOf(2);
+          result.dependencies[0].should.be.an.instanceOf(DepReference);
+          result.dependencies[1].should.be.an.instanceOf(DepReference);
+          expect(result.dependencies[0].getId()).to.equal('package3@1.0.0/util3');
+          expect(result.dependencies[1].getId()).to.equal('package4@1.0.0/util4');
+        });
+      });
+      it('should use inline manifest from given dependency if there is any', function () {
+        depRefItem.manifest = JSON.parse(pkg1);
+        return artifactsDepsResolver._resolveDepReferenceDependencies(depRefItem, baseUrl).then(function (result) {
+          expect(_fetchManifestStub.callCount).to.equal(0);
+          result.dependencies.should.have.lengthOf(2);
+          result.dependencies[0].should.be.an.instanceOf(DepReference);
+          result.dependencies[1].should.be.an.instanceOf(DepReference);
+          expect(result.dependencies[0].getId()).to.equal('package3@1.0.0/util3');
+          expect(result.dependencies[1].getId()).to.equal('package4@1.0.0/util4');
+        });
+      });
+      it('should use manifest from responseCache if there is already one for given webpackageId', function () {
+        artifactsDepsResolver._responseCache.addItem(depRefItem.webpackageId, JSON.parse(pkg1));
+        return artifactsDepsResolver._resolveDepReferenceDependencies(depRefItem, baseUrl).then(function (result) {
+          expect(_fetchManifestStub.callCount).to.equal(0);
+          result.dependencies.should.have.lengthOf(2);
+          result.dependencies[0].should.be.an.instanceOf(DepReference);
+          result.dependencies[1].should.be.an.instanceOf(DepReference);
+          expect(result.dependencies[0].getId()).to.equal('package3@1.0.0/util3');
+          expect(result.dependencies[1].getId()).to.equal('package4@1.0.0/util4');
+        });
+      });
+      it('should add inline or requested manifest to response cache if there is no entry for corresponding webpackageId', function () {
+        return artifactsDepsResolver._resolveDepReferenceDependencies(depRefItem, baseUrl).then(function (result) {
+          expect(artifactsDepsResolver._responseCache.get(depRefItem.webpackageId)).to.eql(JSON.parse(pkg1));
+        });
+      });
+      it('should request manifest files from given baseUrl', function () {
+        var baseUrl = 'https://www.example.test/';
+        return artifactsDepsResolver._resolveDepReferenceDependencies(depRefItem, baseUrl).then(function (result) {
+          expect(_fetchManifestStub.calledWith(baseUrl + depRefItem.webpackageId + '/manifest.webpackage'));
+        });
+      });
+      it('should append \'/\' to baseUrl if not present', function () {
+        var baseUrl = 'https://www.example.test';
+        return artifactsDepsResolver._resolveDepReferenceDependencies(depRefItem, baseUrl).then(function (result) {
+          expect(_fetchManifestStub.calledWith(baseUrl + '/' + depRefItem.webpackageId + '/manifest.webpackage'));
+        });
+      });
+      describe('Error handling', function () {
+        it('should throw an TypeError if parameter baseUrl is not given or a not of type string', function () {
+          try {
+            artifactsDepsResolver._resolveDepReferenceDependencies(depRefItem, {});
+          } catch (error) {
+            expect(error).to.be.an.instanceOf(TypeError);
+          }
+        });
+        it('should throw an TypeError if parameter depReference is not an instance of DependencyMgr.DepReference', function () {
+          try {
+            artifactsDepsResolver._resolveDepReferenceDependencies({}, baseUrl);
+          } catch (error) {
+            expect(error).to.be.an.instanceOf(TypeError);
+          }
+        });
+        it('should reject returned promise if there is an error while fetching the manifest', function () {
+          depRefItem.webpackageId = 'error';
+          return artifactsDepsResolver._resolveDepReferenceDependencies(depRefItem, baseUrl).then(function (result) {
+            throw new Error('Promise was unexpectedly fulfilled. Result: ' + result);
+          }, function (error) {
+            error.should.have.ownProperty('message');
+          });
+        });
       });
     });
   });
