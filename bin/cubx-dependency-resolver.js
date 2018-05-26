@@ -22,9 +22,9 @@ if (!options.rootDependencies) {
   try {
     options.rootDependencies = JSON.parse(options.rootDependencies);
   } catch (e) {
-    console.error('\'rootDependencies\' property should be a valid JSON object.', e);
+    console.error('\'rootDependencies\' property should be a valid JSON array.', e);
   }
 }
 
-var rteUpdater = new ArtifactsDepsResolver();
-rteUpdater.buildRawDependencyTree(options.rootDependencies, options.baseUrl);
+var artifactsDepsResolver = new ArtifactsDepsResolver();
+artifactsDepsResolver.buildRawDependencyTree(options.rootDependencies, options.baseUrl);
