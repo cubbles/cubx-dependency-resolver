@@ -15,6 +15,7 @@
     var pkg4;
     var pkg5;
     var pkg6;
+    var rootDepList;
     before(function () {
       resourcesPath = path.join(__dirname, '../resources');
       pkg1 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage1.json'), 'utf8');
@@ -23,14 +24,12 @@
       pkg4 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage4.json'), 'utf8');
       pkg5 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage5.json'), 'utf8');
       pkg6 = fs.readFileSync(path.join(resourcesPath, 'dependencyPackage6.json'), 'utf8');
+      rootDepList = JSON.parse(fs.readFileSync(path.join(resourcesPath, 'rootDependencies.json'), 'utf8'));
     });
-
     describe('#_buildRawDependencyTree', function () {
-      var rootDepList;
       var baseUrl;
       var stub;
       before(function () {
-        rootDepList = JSON.parse(fs.readFileSync(path.join(resourcesPath, 'rootDependencies.json'), 'utf8'));
         baseUrl = 'https://cubbles.world/sandbox/';
         artifactsDepsResolver = new ArtifactsDepsResolver();
         stub = sinon.stub(artifactsDepsResolver, '_resolveDepReferenceDependencies').callsFake(function (dep) {
@@ -308,6 +307,34 @@
             error.should.have.ownProperty('message');
           });
         });
+      });
+    });
+    describe('#_createDepReferenceListFromArtifactDependencies()', function () {
+      beforeEach(function () {
+        artifactsDepsResolver = new ArtifactsDepsResolver();
+      });
+      it('should create a list of DepReference items from given list of dependencies', function () {
+        var referrer = {
+          webpackageId: 'testWebpackagePackageId',
+          artifactId: 'testArtifactId'
+        };
+        var depList = artifactsDepsResolver._createDepReferenceListFromArtifactDependencies(rootDepList, referrer);
+        expect(depList).to.have.lengthOf(2);
+        var item = depList[0];
+        item.artifactId.should.equal('util1');
+        item.webpackageId.should.equal('package1@1.0.0');
+        item.referrer[0].should.eql(referrer);
+        item.dependencyExcludes.should.eql([]);
+
+        item = depList[1];
+        item.artifactId.should.equal('util2');
+        item.webpackageId.should.equal('package2@1.0.0');
+        item.referrer[0].should.eql(referrer);
+        item.dependencyExcludes.should.eql([]);
+      });
+      it('should set referrer to "root" if param referrer is set to null', function () {
+        var item = artifactsDepsResolver._createDepReferenceListFromArtifactDependencies(rootDepList, null)[0];
+        item.referrer[0].should.equal('root');
       });
     });
   });
