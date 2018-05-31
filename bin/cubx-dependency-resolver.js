@@ -43,4 +43,6 @@ if (!options.rootDependencies) {
 }
 
 var artifactsDepsResolver = new ArtifactsDepsResolver();
-artifactsDepsResolver.buildRawDependencyTree(options.rootDependencies, options.baseUrl);
+artifactsDepsResolver.buildRawDependencyTree(options.rootDependencies, options.baseUrl).then(function (rawDepTree) {
+  console.log(JSON.stringify(rawDepTree.toJSON(true), null, '   '));
+});
