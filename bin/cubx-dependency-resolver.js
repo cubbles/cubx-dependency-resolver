@@ -5,7 +5,8 @@ var fs = require('fs-extra');
 
 var args = [
   {name: 'baseUrl', type: String, alias: 'u'},
-  {name: 'rootDependencies', type: String, alias: 'd'}
+  {name: 'rootDependencies', type: String, alias: 'd'},
+  {name: 'type', type: String, alias: 't'}
 ];
 
 function parseRootDependencies (rootDeps) {
@@ -42,7 +43,28 @@ if (!options.rootDependencies) {
   }
 }
 
+if (!options.type) {
+  options.type = 'list';
+  console.warn('Using default value for \'type\': \'list\'.');
+} else if (options.type !== 'raw' && options.type !== 'resolved' && options.type !== 'list') {
+  console.error('Invalid "type", it can be \'list\', \'resolved\' or \'raw\'. Using default value: \'list\'. Given: ', '\'' + options.type + '\'');
+  options.type = 'list';
+}
+
 var artifactsDepsResolver = new ArtifactsDepsResolver();
-artifactsDepsResolver.buildRawDependencyTree(options.rootDependencies, options.baseUrl).then(function (rawDepTree) {
-  console.log(JSON.stringify(rawDepTree.toJSON(true), null, '   '));
-});
+if (options.type === 'raw') {
+  artifactsDepsResolver.buildRawDependencyTree(options.rootDependencies, options.baseUrl).then(function (rawDepTree) {
+    console.log('Raw dependency tree: \n', JSON.stringify(rawDepTree.toJSON(true), null, '   '));
+  });
+} else {
+  artifactsDepsResolver.resolveDependencies(options.rootDependencies, options.baseUrl).then(function () {
+    switch (options.type) {
+      case 'list':
+        console.log('Resources list: \n', JSON.stringify(artifactsDepsResolver.getResourceList(), null, '   '));
+        break;
+      case 'resolved':
+        console.log('Resolved dependency tree: \n', JSON.stringify(artifactsDepsResolver.getResolvedDependencyTree().toJSON(true), null, '   '));
+        break;
+    }
+  });
+}
