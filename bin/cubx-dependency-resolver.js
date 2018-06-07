@@ -6,7 +6,8 @@ var fs = require('fs-extra');
 var args = [
   {name: 'baseUrl', type: String, alias: 'u'},
   {name: 'rootDependencies', type: String, alias: 'd'},
-  {name: 'type', type: String, alias: 't'}
+  {name: 'type', type: String, alias: 't'},
+  {name: 'mode', type: String, alias: 'm'}
 ];
 
 function parseRootDependencies (rootDeps) {
@@ -51,7 +52,7 @@ if (!options.type) {
   options.type = 'list';
 }
 
-var artifactsDepsResolver = new ArtifactsDepsResolver();
+var artifactsDepsResolver = new ArtifactsDepsResolver(options.mode);
 if (options.type === 'raw') {
   artifactsDepsResolver.buildRawDependencyTree(options.rootDependencies, options.baseUrl).then(function (rawDepTree) {
     console.log('Raw dependency tree: \n', JSON.stringify(rawDepTree.toJSON(true), null, '   '));
