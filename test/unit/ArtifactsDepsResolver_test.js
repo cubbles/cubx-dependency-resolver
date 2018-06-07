@@ -411,7 +411,6 @@
         cacheAddItemSpy.should.be.calledWith(pk1Manifest.artifacts.utilities[0].artifactId, pk1Manifest);
       });
     });
-
     describe('#_checkDepTreeForExcludes()', function () {
       var baseUrl;
       var depTree;
@@ -885,12 +884,12 @@
             artifactsDepsResolver._baseUrl + item1.webpackageId + '/' + item1.artifactId + '/' + item1.resources[ 0 ]);
           resourceList[ 1 ].should.have.property('path',
             artifactsDepsResolver._baseUrl + item1.webpackageId + '/' + item1.artifactId + '/' +
-            item1.resources[ 1 ].dev);
+            item1.resources[ 1 ].prod);
           resourceList[ 2 ].should.have.property('path',
             artifactsDepsResolver._baseUrl + item1.webpackageId + '/' + item1.artifactId + '/' + item1.resources[ 2 ]);
           resourceList[ 3 ].should.have.property('path',
             artifactsDepsResolver._baseUrl + item2.webpackageId + '/' + item2.artifactId + '/' +
-            item2.resources[ 0 ].dev);
+            item2.resources[ 0 ].prod);
           resourceList[ 4 ].should.have.property('path',
             artifactsDepsResolver._baseUrl + item2.webpackageId + '/' + item2.artifactId + '/' + item2.resources[ 1 ]);
           resourceList[ 5 ].should.have.property('path',
@@ -1188,5 +1187,27 @@
         });
       });
     });
+    describe('runtimeMode behavior', function () {
+      var consoleSpy;
+      beforeEach(function () {
+        consoleSpy = sinon.spy(console, 'error');
+      });
+      afterEach(function () {
+        consoleSpy.restore();
+      });
+      it('should use default value \'prod\' runtime mode since no value is provided', function () {
+        var artifactsDepsResolver = new ArtifactsDepsResolver();
+        expect(artifactsDepsResolver._runtimeMode).to.be.equal('prod');
+      });
+      it('should use default value \'prod\' runtime mode since an invalid value was provided', function () {
+        var artifactsDepsResolver = new ArtifactsDepsResolver('development');
+        expect(consoleSpy).to.be.calledOnce;
+        expect(artifactsDepsResolver._runtimeMode).to.be.equal('prod');
+      });
+      it('should use provided runtime mode', function () {
+        var artifactsDepsResolver = new ArtifactsDepsResolver('dev');
+        expect(artifactsDepsResolver._runtimeMode).to.be.equal('dev');
+      });
+    })
   });
 })();
