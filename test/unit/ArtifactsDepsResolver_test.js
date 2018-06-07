@@ -1208,6 +1208,6 @@
         var artifactsDepsResolver = new ArtifactsDepsResolver('dev');
         expect(artifactsDepsResolver._runtimeMode).to.be.equal('dev');
       });
-    })
+    });
   });
 })();
