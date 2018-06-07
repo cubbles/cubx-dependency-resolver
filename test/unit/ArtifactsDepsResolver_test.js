@@ -837,6 +837,7 @@
         // add an dependencyExclude to rootDependencies
         artifactsDepsResolver = new ArtifactsDepsResolver();
         artifactsDepsResolver._baseUrl = 'https://cubbles.world/sandbox//';
+        artifactsDepsResolver._runtimeMode = 'prod';
       });
       beforeEach(function () {
         var testReferrer = {
@@ -878,7 +879,6 @@
       it('should return a list of all resources in correct order for given list of DepReference items',
         function () {
           var resourceList = artifactsDepsResolver._calculateResourceList(internalDepList);
-          console.log(JSON.stringify(resourceList));
           resourceList.should.have.length(7);
           resourceList[ 0 ].should.have.property('path',
             artifactsDepsResolver._baseUrl + item1.webpackageId + '/' + item1.artifactId + '/' + item1.resources[ 0 ]);
@@ -906,6 +906,44 @@
       after(function () {
         artifactsDepsResolver._depJson = null;
       });
+    });
+    describe('#_calculateWpList()', function () {
+      var internalDepList = [];
+      var item1;
+      var item2;
+      var item3;
+      var expectedWpList = [];
+      before(function () {
+        // add an dependencyExclude to rootDependencies
+        artifactsDepsResolver = new ArtifactsDepsResolver();
+        artifactsDepsResolver._baseUrl = 'https://cubbles.world/sandbox/';
+      });
+      beforeEach(function () {
+        var testReferrer = {
+          webpackageId: 'testWebpackage',
+          artifactId: 'testArtifactId'
+        };
+        var items = artifactsDepsResolver._createDepReferenceListFromArtifactDependencies([
+          {webpackageId: 'package1@1.0.0', artifactId: 'generic1'},
+          {webpackageId: 'package2@1.0.0', artifactId: 'generic2'},
+          {webpackageId: 'package3@1.0.0', artifactId: 'util#main'}
+        ], testReferrer);
+
+        item1 = items[ 0 ];
+        item2 = items[ 1 ];
+        item3 = items[ 2 ];
+        internalDepList.push(item1);
+        internalDepList.push(item2);
+        internalDepList.push(item3);
+        expectedWpList.push(item1.webpackageId);
+        expectedWpList.push(item2.webpackageId);
+        expectedWpList.push(item3.webpackageId);
+      });
+      it('should return a list of all wp in correct order for given list of DepReference items',
+        function () {
+          var wpList = artifactsDepsResolver._calculateWpList(internalDepList);
+          expect(wpList).be.deep.equal(expectedWpList);
+        });
     });
     describe('#_createResourceFromItem()', function () {
       var item = {
@@ -1012,12 +1050,168 @@
     });
     describe('#resolveDependencies', function () {
       var baseUrl;
-      var _buildRawDepTreeStub;
+      var buildRawDepTreeStub;
       var removeDuplicatesStub;
       var applyExcludesStub;
       var removeExcludesStub;
       var _getDependencyListFromTreeStub;
       var _checkDepTreeForExcludesStub;
+      var _calculateResourceListStub;
+      var rawDepTree;
+      var consoleSpy;
+      beforeEach(function () {
+        artifactsDepsResolver = new ArtifactsDepsResolver();
+
+        /**
+         * Build the following tree:
+         *
+         *               package1@1.0.0/util1
+         *                    /       \
+         *                   /         \
+         *    package3@1.0.0/util3    package4@1.0.0/util4
+         *            |                         |
+         *            |                         |
+         *    package5@1.0.0/util5    package3@1.0.0/util3
+         */
+        rawDepTree = new DependencyTree();
+        var root = new DependencyTree.Node();
+        root.data = new DepReference({webpackageId: 'package1@1.0.0', artifactId: 'util1', referrer: null});
+        rawDepTree.insertNode(root);
+        var childA = new DependencyTree.Node();
+        childA.data = new DepReference({
+          webpackageId: 'package3@1.0.0',
+          artifactId: 'util3',
+          referrer: {webpackageId: 'package1@1.0.0', artifactId: 'util1'}
+        });
+        rawDepTree.insertNode(childA, root);
+        var childB = new DependencyTree.Node();
+        childB.data = new DepReference({
+          webpackageId: 'package4@1.0.0',
+          artifactId: 'util4',
+          referrer: {webpackageId: 'package1@1.0.0', artifactId: 'util1'}
+        });
+        rawDepTree.insertNode(childB, root);
+        var childA1 = new DependencyTree.Node();
+        childA1.data = new DepReference({
+          webpackageId: 'package5@1.0.0',
+          artifactId: 'util5',
+          referrer: {webpackageId: 'package4@1.0.0', artifactId: 'util4'}
+        });
+        rawDepTree.insertNode(childA1, childA);
+        var childADuplicated = new DependencyTree.Node();
+        childADuplicated.data = new DepReference({
+          webpackageId: 'package3@1.0.0',
+          artifactId: 'util3',
+          referrer: {webpackageId: 'package4@1.0.0', artifactId: 'util4'}
+        });
+        rawDepTree.insertNode(childADuplicated, childB);
+        var resourcesList = [
+          {
+            path: 'https://cubbles.world/sandbox//package1@1.0.0/util1/util1.js',
+            type: 'javascript',
+            referrer: null
+          },
+          {
+            path: 'https://cubbles.world/sandbox//package3@1.0.0/util3/util3.js',
+            type: 'javascript',
+            referrer: {webpackageId: 'package1@1.0.0', artifactId: 'util1'}
+          },
+          {
+            path: 'https://cubbles.world/sandbox//package4@1.0.0/util4/util4.js',
+            type: 'javascript',
+            referrer: {webpackageId: 'package1@1.0.0', artifactId: 'util1'}
+          },
+          {
+            path: 'https://cubbles.world/sandbox//package5@1.0.0/util5/util5.js',
+            type: 'javascript',
+            referrer: {webpackageId: 'package4@1.0.0', artifactId: 'util4'}
+          }
+        ];
+
+        // Stubs
+        buildRawDepTreeStub = sinon.stub(artifactsDepsResolver, 'buildRawDependencyTree').callsFake(function (rootDeps) {
+          return new Promise(function (resolve, reject) {
+            if (rootDeps[0].webpackageId === 'error') {
+              reject(new Error());
+            }
+            setTimeout(function () {
+              artifactsDepsResolver.rawDepTree = rawDepTree.clone();
+              resolve(rawDepTree);
+            }, 200);
+          });
+        });
+        _checkDepTreeForExcludesStub = sinon.stub(artifactsDepsResolver, '_checkDepTreeForExcludes').callsFake(function () {
+          return new Promise(function (resolve, reject) {
+            setTimeout(function () {
+              resolve(rawDepTree);
+            }, 200);
+          });
+        });
+        _getDependencyListFromTreeStub = sinon.stub(artifactsDepsResolver, '_getDependencyListFromTree').callsFake(function () {
+          return [root.data, childA.data, childB.data, childA1.data];
+        });
+        _calculateResourceListStub = sinon.stub(artifactsDepsResolver, '_calculateResourceList').callsFake(function () {
+          return resourcesList;
+        });
+        removeDuplicatesStub = sinon.stub(Object.getPrototypeOf(rawDepTree), 'removeDuplicates').callsFake(function () {
+          return new Promise(function (resolve, reject) {
+            rawDepTree.removeNode(childADuplicated);
+            childB.usesExisting = [childA];
+            childA.usedBy = [childB];
+          });
+        });
+        applyExcludesStub = sinon.stub(Object.getPrototypeOf(rawDepTree), 'applyExcludes').callsFake(function () {});
+        removeExcludesStub = sinon.stub(Object.getPrototypeOf(rawDepTree), 'removeExcludes').callsFake(function () {});
+
+        consoleSpy = sinon.spy(console, 'error');
+      });
+      afterEach(function () {
+        buildRawDepTreeStub.restore();
+        _getDependencyListFromTreeStub.restore();
+        _checkDepTreeForExcludesStub.restore();
+        _calculateResourceListStub.restore();
+        removeDuplicatesStub.restore();
+        applyExcludesStub.restore();
+        removeExcludesStub.restore();
+        consoleSpy.restore();
+      });
+      it('should return a promise', function () {
+        expect(artifactsDepsResolver.resolveDependencies(rootDepList, baseUrl)).to.be.an.instanceOf(Promise);
+      });
+      it('should have a \'resolvedDepTree\' propertie', function () {
+        this.timeout(1500);
+        return artifactsDepsResolver.resolveDependencies(rootDepList, baseUrl).then(function (result) {
+          artifactsDepsResolver.resolvedDepTree.should.be.an.instanceOf(DependencyTree);
+          /**
+           * Resolved dep tree:
+           *
+           *               package1@1.0.0/util1
+           *                    /       \
+           *                   /         \
+           *    package3@1.0.0/util3    package4@1.0.0/util4
+           *            |
+           *            |
+           *    package5@1.0.0/util5
+           */
+          expect(artifactsDepsResolver.resolvedDepTree._rootNodes[0].children[1].children).to.have.lengthOf(0);
+          expect(artifactsDepsResolver.resolvedDepTree._rootNodes[0].children[0].usedBy[0].data.getId()).to.equal('package4@1.0.0/util4');
+          expect(artifactsDepsResolver.resolvedDepTree._rootNodes[0].children[1].usesExisting[0].data.getId()).to.equal('package3@1.0.0/util3');
+        });
+      });
+      describe('Error Handling', function () {
+        it('should reject returned promise if there is an error resolving single depenencies', function () {
+          return artifactsDepsResolver.resolveDependencies([{webpackageId: 'error', artifactId: 'util'}], baseUrl).then(function (result) {
+            throw new Error('Promise was unexpectedly fulfilled. Result: ' + result);
+          }, function (error) {
+            expect(consoleSpy).to.be.calledWith('Error while building and processing DependencyTree: ', error);
+          });
+        });
+      });
+    });
+    describe('#resolveResourcesList', function () {
+      var baseUrl;
+      var resolveDependenciesStub;
+      var _getDependencyListFromTreeStub;
       var _calculateResourceListStub;
       var rawDepTree;
       var resourcesList;
@@ -1092,20 +1286,15 @@
         ];
 
         // Stubs
-        _buildRawDepTreeStub = sinon.stub(artifactsDepsResolver, 'buildRawDependencyTree').callsFake(function (rootDeps) {
+        resolveDependenciesStub = sinon.stub(artifactsDepsResolver, 'resolveDependencies').callsFake(function (rootDeps) {
           return new Promise(function (resolve, reject) {
             if (rootDeps[0].webpackageId === 'error') {
               reject(new Error());
             }
             setTimeout(function () {
-              artifactsDepsResolver.rawDepTree = rawDepTree.clone();
-              resolve(rawDepTree);
-            }, 200);
-          });
-        });
-        _checkDepTreeForExcludesStub = sinon.stub(artifactsDepsResolver, '_checkDepTreeForExcludes').callsFake(function () {
-          return new Promise(function (resolve, reject) {
-            setTimeout(function () {
+              rawDepTree.removeNode(childADuplicated);
+              childB.usesExisting = [childA];
+              childA.usedBy = [childB];
               resolve(rawDepTree);
             }, 200);
           });
@@ -1116,97 +1305,158 @@
         _calculateResourceListStub = sinon.stub(artifactsDepsResolver, '_calculateResourceList').callsFake(function () {
           return resourcesList;
         });
-        removeDuplicatesStub = sinon.stub(Object.getPrototypeOf(rawDepTree), 'removeDuplicates').callsFake(function () {
-          return new Promise(function (resolve, reject) {
-            rawDepTree.removeNode(childADuplicated);
-            childB.usesExisting = [childA];
-            childA.usedBy = [childB];
-          });
-        });
-        applyExcludesStub = sinon.stub(Object.getPrototypeOf(rawDepTree), 'applyExcludes').callsFake(function () {});
-        removeExcludesStub = sinon.stub(Object.getPrototypeOf(rawDepTree), 'removeExcludes').callsFake(function () {});
-
         consoleSpy = sinon.spy(console, 'error');
       });
       afterEach(function () {
-        _buildRawDepTreeStub.restore();
+        resolveDependenciesStub.restore();
         _getDependencyListFromTreeStub.restore();
-        _checkDepTreeForExcludesStub.restore();
         _calculateResourceListStub.restore();
-        removeDuplicatesStub.restore();
-        applyExcludesStub.restore();
-        removeExcludesStub.restore();
         consoleSpy.restore();
       });
       it('should return a promise', function () {
-        expect(artifactsDepsResolver.resolveDependencies(rootDepList, baseUrl)).to.be.an.instanceOf(Promise);
+        expect(artifactsDepsResolver.resolveResourcesList(rootDepList, baseUrl)).to.be.an.instanceOf(Promise);
       });
-      it('should have \'rawDepTree\', \'resolvedDepTree\' and \'resourceList\' properties', function () {
+      it('should have a \'resourceList\' propertie', function () {
         this.timeout(1500);
-        return artifactsDepsResolver.resolveDependencies(rootDepList, baseUrl).then(function (result) {
-          artifactsDepsResolver.rawDepTree.should.be.an.instanceOf(DependencyTree);
-          artifactsDepsResolver.resolvedDepTree.should.be.an.instanceOf(DependencyTree);
-          /**
-           * Raw dep tree:
-           *
-           *               package1@1.0.0/util1
-           *                    /       \
-           *                   /         \
-           *    package3@1.0.0/util3    package4@1.0.0/util4
-           *            |                         |
-           *            |                         |
-           *    package5@1.0.0/util5    package3@1.0.0/util3
-           */
-          expect(artifactsDepsResolver.rawDepTree._rootNodes[0].children[1].children[0].data.getId()).to.equal('package3@1.0.0/util3');
-          /**
-           * Resolved dep tree:
-           *
-           *               package1@1.0.0/util1
-           *                    /       \
-           *                   /         \
-           *    package3@1.0.0/util3    package4@1.0.0/util4
-           *            |
-           *            |
-           *    package5@1.0.0/util5
-           */
-          expect(artifactsDepsResolver.resolvedDepTree._rootNodes[0].children[1].children).to.have.lengthOf(0);
-          expect(artifactsDepsResolver.resolvedDepTree._rootNodes[0].children[0].usedBy[0].data.getId()).to.equal('package4@1.0.0/util4');
-          expect(artifactsDepsResolver.resolvedDepTree._rootNodes[0].children[1].usesExisting[0].data.getId()).to.equal('package3@1.0.0/util3');
-
+        return artifactsDepsResolver.resolveResourcesList(rootDepList, baseUrl).then(function (result) {
           // Resources list
           expect(artifactsDepsResolver.resourceList).to.be.deep.equal(resourcesList);
         });
       });
-      describe('Error Handling', function () {
-        it('should reject returned promise if there is an error resolving single depenencies', function () {
-          return artifactsDepsResolver.resolveDependencies([{webpackageId: 'error', artifactId: 'util'}], baseUrl).then(function (result) {
-            throw new Error('Promise was unexpectedly fulfilled. Result: ' + result);
-          }, function (error) {
-            expect(consoleSpy).to.be.calledWith('Error while building and processing DependencyTree: ', error);
-          });
-        });
-      });
-    });
-    describe('runtimeMode behavior', function () {
-      var consoleSpy;
-      beforeEach(function () {
-        consoleSpy = sinon.spy(console, 'error');
-      });
-      afterEach(function () {
-        consoleSpy.restore();
-      });
       it('should use default value \'prod\' runtime mode since no value is provided', function () {
-        var artifactsDepsResolver = new ArtifactsDepsResolver();
+        artifactsDepsResolver.resolveResourcesList(rootDepList, baseUrl);
         expect(artifactsDepsResolver._runtimeMode).to.be.equal('prod');
       });
       it('should use default value \'prod\' runtime mode since an invalid value was provided', function () {
-        var artifactsDepsResolver = new ArtifactsDepsResolver('development');
+        artifactsDepsResolver.resolveResourcesList(rootDepList, baseUrl, 'development');
         expect(consoleSpy).to.be.calledOnce;
         expect(artifactsDepsResolver._runtimeMode).to.be.equal('prod');
       });
       it('should use provided runtime mode', function () {
-        var artifactsDepsResolver = new ArtifactsDepsResolver('dev');
+        artifactsDepsResolver.resolveResourcesList(rootDepList, baseUrl, 'dev');
         expect(artifactsDepsResolver._runtimeMode).to.be.equal('dev');
+      });
+      describe('Error Handling', function () {
+        baseUrl = '';
+        afterEach(function () {
+          consoleSpy.restore();
+        });
+        it('should reject returned promise if there is an error resolving single depenencies', function () {
+          return artifactsDepsResolver.resolveResourcesList([{webpackageId: 'error', artifactId: 'util'}], baseUrl).then(function (result) {
+            throw new Error('Promise was unexpectedly fulfilled. Result: ' + result);
+          }, function (error) {
+            expect(consoleSpy).to.be.calledWith('Error while building resources list: ', error);
+          });
+        });
+      });
+    });
+    describe('#resolveWpList', function () {
+      var baseUrl;
+      var resolveDependenciesStub;
+      var _getDependencyListFromTreeStub;
+      var _calculateWpList;
+      var rawDepTree;
+      var wpList;
+      var consoleSpy;
+      beforeEach(function () {
+        artifactsDepsResolver = new ArtifactsDepsResolver();
+
+        /**
+         * Build the following tree:
+         *
+         *               package1@1.0.0/util1
+         *                    /       \
+         *                   /         \
+         *    package3@1.0.0/util3    package4@1.0.0/util4
+         *            |                         |
+         *            |                         |
+         *    package5@1.0.0/util5    package3@1.0.0/util3
+         */
+        rawDepTree = new DependencyTree();
+        var root = new DependencyTree.Node();
+        root.data = new DepReference({webpackageId: 'package1@1.0.0', artifactId: 'util1', referrer: null});
+        rawDepTree.insertNode(root);
+        var childA = new DependencyTree.Node();
+        childA.data = new DepReference({
+          webpackageId: 'package3@1.0.0',
+          artifactId: 'util3',
+          referrer: {webpackageId: 'package1@1.0.0', artifactId: 'util1'}
+        });
+        rawDepTree.insertNode(childA, root);
+        var childB = new DependencyTree.Node();
+        childB.data = new DepReference({
+          webpackageId: 'package4@1.0.0',
+          artifactId: 'util4',
+          referrer: {webpackageId: 'package1@1.0.0', artifactId: 'util1'}
+        });
+        rawDepTree.insertNode(childB, root);
+        var childA1 = new DependencyTree.Node();
+        childA1.data = new DepReference({
+          webpackageId: 'package5@1.0.0',
+          artifactId: 'util5',
+          referrer: {webpackageId: 'package4@1.0.0', artifactId: 'util4'}
+        });
+        rawDepTree.insertNode(childA1, childA);
+        var childADuplicated = new DependencyTree.Node();
+        childADuplicated.data = new DepReference({
+          webpackageId: 'package3@1.0.0',
+          artifactId: 'util3',
+          referrer: {webpackageId: 'package4@1.0.0', artifactId: 'util4'}
+        });
+        rawDepTree.insertNode(childADuplicated, childB);
+        wpList = ['package1@1.0.0', 'package3@1.0.0', 'package5@1.0.0', 'package4@1.0.0'];
+
+        // Stubs
+        resolveDependenciesStub = sinon.stub(artifactsDepsResolver, 'resolveDependencies').callsFake(function (rootDeps) {
+          return new Promise(function (resolve, reject) {
+            if (rootDeps[0].webpackageId === 'error') {
+              reject(new Error());
+            }
+            setTimeout(function () {
+              rawDepTree.removeNode(childADuplicated);
+              childB.usesExisting = [childA];
+              childA.usedBy = [childB];
+              resolve(rawDepTree);
+            }, 200);
+          });
+        });
+        _getDependencyListFromTreeStub = sinon.stub(artifactsDepsResolver, '_getDependencyListFromTree').callsFake(function () {
+          return [root.data, childA.data, childB.data, childA1.data];
+        });
+        _calculateWpList = sinon.stub(artifactsDepsResolver, '_calculateWpList').callsFake(function () {
+          return wpList;
+        });
+        consoleSpy = sinon.spy(console, 'error');
+      });
+      afterEach(function () {
+        resolveDependenciesStub.restore();
+        _getDependencyListFromTreeStub.restore();
+        _calculateWpList.restore();
+        consoleSpy.restore();
+      });
+      it('should return a promise', function () {
+        expect(artifactsDepsResolver.resolveWpList(rootDepList, baseUrl)).to.be.an.instanceOf(Promise);
+      });
+      it('should have a \'wpList\' propertie', function () {
+        this.timeout(1500);
+        return artifactsDepsResolver.resolveWpList(rootDepList, baseUrl).then(function (result) {
+          // Resources list
+          expect(result).to.be.deep.equal(wpList);
+          expect(artifactsDepsResolver.wpList).to.be.deep.equal(wpList);
+        });
+      });
+      describe('Error Handling', function () {
+        baseUrl = '';
+        afterEach(function () {
+          consoleSpy.restore();
+        });
+        it('should reject returned promise if there is an error resolving single depenencies', function () {
+          return artifactsDepsResolver.resolveWpList([{webpackageId: 'error', artifactId: 'util'}], baseUrl).then(function (result) {
+            throw new Error('Promise was unexpectedly fulfilled. Result: ' + result);
+          }, function (error) {
+            expect(consoleSpy).to.be.calledWith('Error while building webpackages list: ', error);
+          });
+        });
       });
     });
   });
