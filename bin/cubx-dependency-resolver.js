@@ -23,6 +23,10 @@ function parseRootDependencies (rootDeps) {
   }
 }
 
+function isValidType (type) {
+  return type !== 'raw' || type !== 'resolved' || type !== 'list' || type !== 'wplist';
+}
+
 var options = commandLineArgs(args);
 
 if (!options.baseUrl) {
@@ -47,25 +51,32 @@ if (!options.rootDependencies) {
 if (!options.type) {
   options.type = 'list';
   console.warn('Using default value for \'type\': \'list\'.');
-} else if (options.type !== 'raw' && options.type !== 'resolved' && options.type !== 'list') {
-  console.error('Invalid "type", it can be \'list\', \'resolved\' or \'raw\'. Using default value: \'list\'. Given: ', '\'' + options.type + '\'');
+} else if (!isValidType(options.type)) {
+  console.warn('Invalid "type", it can be \'list\', \'resolved\' or \'raw\'. Using default value: \'list\'. ' +
+    'Given: ', '\'' + options.type + '\'. Using default value: \'list\'.');
   options.type = 'list';
 }
 
-var artifactsDepsResolver = new ArtifactsDepsResolver(options.mode);
-if (options.type === 'raw') {
-  artifactsDepsResolver.buildRawDependencyTree(options.rootDependencies, options.baseUrl).then(function (rawDepTree) {
-    console.log('Raw dependency tree: \n', JSON.stringify(rawDepTree.toJSON(true), null, '   '));
-  });
-} else {
-  artifactsDepsResolver.resolveDependencies(options.rootDependencies, options.baseUrl).then(function () {
-    switch (options.type) {
-      case 'list':
-        console.log('Resources list: \n', JSON.stringify(artifactsDepsResolver.getResourceList(), null, '   '));
-        break;
-      case 'resolved':
-        console.log('Resolved dependency tree: \n', JSON.stringify(artifactsDepsResolver.getResolvedDependencyTree().toJSON(true), null, '   '));
-        break;
-    }
-  });
+var artifactsDepsResolver = new ArtifactsDepsResolver();
+switch (options.type) {
+  case 'raw':
+    artifactsDepsResolver.buildRawDependencyTree(options.rootDependencies, options.baseUrl).then(function (rawDepTree) {
+      console.log('Raw dependency tree: \n', JSON.stringify(rawDepTree.toJSON(true), null, '   '));
+    });
+    break;
+  case 'list':
+    artifactsDepsResolver.resolveResourcesList(options.rootDependencies, options.baseUrl, options.mode).then(function (resourceList) {
+      console.log('Resources list: \n', JSON.stringify(resourceList, null, '   '));
+    });
+    break;
+  case 'wplist':
+    artifactsDepsResolver.resolveWpList(options.rootDependencies, options.baseUrl).then(function (wpList) {
+      console.log('Webpackages list: \n', JSON.stringify(wpList, null, '   '));
+    });
+    break;
+  case 'resolved':
+    artifactsDepsResolver.resolveDependencies(options.rootDependencies, options.baseUrl).then(function (resolvedDepTree) {
+      console.log('Resolved dependency tree: \n', JSON.stringify(resolvedDepTree, null, '   '));
+    });
+    break;
 }
