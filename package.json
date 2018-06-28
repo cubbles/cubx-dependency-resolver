@@ -2,7 +2,10 @@
   "name": "cubx-dependency-resolver",
   "version": "1.0.0",
   "description": "Npm package to resolve the dependencies of a list of artifacts",
-  "main": "cubx-dependency-resolver.js",
+  "main": "lib/cubx-dependency-resolver.js",
+  "bin": {
+    "cubx-dependency-resolver": "./bin/cubx-dependency-resolver.js"
+  },
   "scripts": {
     "prepublish": "npm run-script lint",
     "lint": "eslint lib/**/*.js bin/**/*.js test/unit/**/*.js *.js",
@@ -43,12 +46,12 @@
     "proxyquire": "^2.0.1",
     "sinon": "^5.0.7",
     "sinon-chai": "^3.0.0",
-    "time-grunt": "~1.4.0",
-    "fs-extra": "^6.0.1"
+    "time-grunt": "~1.4.0"
   },
   "dependencies": {
     "axios": "^0.18.0",
     "command-line-args": "^5.0.2",
+    "fs-extra": "^6.0.1",
     "path": "^0.12.7"
   }
 }
