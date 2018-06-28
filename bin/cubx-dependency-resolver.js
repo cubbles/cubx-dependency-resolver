@@ -61,22 +61,22 @@ var artifactsDepsResolver = new ArtifactsDepsResolver();
 switch (options.type) {
   case 'raw':
     artifactsDepsResolver.buildRawDependencyTree(options.rootDependencies, options.baseUrl).then(function (rawDepTree) {
-      console.log('Raw dependency tree: \n', JSON.stringify(rawDepTree.toJSON(true), null, '   '));
+      console.log(JSON.stringify(rawDepTree.toJSON(true), null, '   '));
     });
     break;
   case 'list':
     artifactsDepsResolver.resolveResourcesList(options.rootDependencies, options.baseUrl, options.mode).then(function (resourceList) {
-      console.log('Resources list: \n', JSON.stringify(resourceList, null, '   '));
+      console.log(JSON.stringify(resourceList, null, '   '));
     });
     break;
   case 'wplist':
     artifactsDepsResolver.resolveWpList(options.rootDependencies, options.baseUrl).then(function (wpList) {
-      console.log('Webpackages list: \n', JSON.stringify(wpList, null, '   '));
+      console.log(JSON.stringify(wpList, null, '   '));
     });
     break;
   case 'resolved':
     artifactsDepsResolver.resolveDependencies(options.rootDependencies, options.baseUrl).then(function (resolvedDepTree) {
-      console.log('Resolved dependency tree: \n', JSON.stringify(resolvedDepTree, null, '   '));
+      console.log(JSON.stringify(resolvedDepTree, null, '   '));
     });
     break;
 }
