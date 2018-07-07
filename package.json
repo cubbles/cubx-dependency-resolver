@@ -1,6 +1,6 @@
 {
   "name": "cubx-dependency-resolver",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Npm package to resolve the dependencies of a list of artifacts",
   "main": "lib/cubx-dependency-resolver.js",
   "bin": {
