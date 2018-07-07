@@ -24,7 +24,7 @@ function parseRootDependencies (rootDeps) {
 }
 
 function isValidType (type) {
-  return type !== 'raw' || type !== 'resolved' || type !== 'list' || type !== 'wplist';
+  return type === 'raw' || type === 'resolved' || type === 'list' || type === 'wplist' || type === 'mlist';
 }
 
 var options = commandLineArgs(args);
@@ -52,7 +52,7 @@ if (!options.type) {
   options.type = 'list';
   console.warn('Using default value for \'type\': \'list\'.');
 } else if (!isValidType(options.type)) {
-  console.warn('Invalid "type", it can be \'list\', \'resolved\' or \'raw\'. Using default value: \'list\'. ' +
+  console.warn('Invalid "type", it can be \'list\', \'resolved\', \'raw\', \'wplist\' or \'mlist\'. Using default value: \'list\'. ' +
     'Given: ', '\'' + options.type + '\'. Using default value: \'list\'.');
   options.type = 'list';
 }
@@ -72,6 +72,11 @@ switch (options.type) {
   case 'wplist':
     artifactsDepsResolver.resolveWpList(options.rootDependencies, options.baseUrl).then(function (wpList) {
       console.log(JSON.stringify(wpList, null, '   '));
+    });
+    break;
+  case 'mlist':
+    artifactsDepsResolver.resolveManifestsList(options.rootDependencies, options.baseUrl).then(function (mList) {
+      console.log(JSON.stringify(mList, null, '   '));
     });
     break;
   case 'resolved':
