@@ -399,18 +399,6 @@
         });
       });
     });
-    describe('#_storeManifestFiles()', function () {
-      var cacheAddItemSpy;
-      before(function () {
-        artifactsDepsResolver = new ArtifactsDepsResolver();
-        cacheAddItemSpy = sinon.spy(artifactsDepsResolver._responseCache, 'addItem');
-      });
-      it('should call \'addItem\' method from \'_responseCache\'', function () {
-        var pk1Manifest = JSON.parse(pkg1);
-        artifactsDepsResolver._storeManifestFiles(pk1Manifest, pk1Manifest.artifacts.utilities[0].artifactId);
-        cacheAddItemSpy.should.be.calledWith(pk1Manifest.artifacts.utilities[0].artifactId, pk1Manifest);
-      });
-    });
     describe('#_checkDepTreeForExcludes()', function () {
       var baseUrl;
       var depTree;
@@ -1455,6 +1443,63 @@
             throw new Error('Promise was unexpectedly fulfilled. Result: ' + result);
           }, function (error) {
             expect(consoleSpy).to.be.calledWith('Error while building webpackages list: ', error);
+          });
+        });
+      });
+    });
+    describe('#resolveManifestsList', function () {
+      var baseUrl;
+      var resolveDependenciesStub;
+      var getResponseCacheItemsStub;
+      var manifiestsList;
+      var consoleSpy;
+      beforeEach(function () {
+        artifactsDepsResolver = new ArtifactsDepsResolver();
+        manifiestsList = ['manifest of package1@1.0.0', 'manifest of package3@1.0.0', 'manifest of package5@1.0.0', 'manifest of package4@1.0.0'];
+
+        // Stubs
+        resolveDependenciesStub = sinon.stub(artifactsDepsResolver, 'resolveDependencies').callsFake(function (rootDeps) {
+          return new Promise(function (resolve, reject) {
+            if (rootDeps[0].webpackageId === 'error') {
+              reject(new Error('Error in resolveDependencies'));
+            } else {
+              setTimeout(function () {
+                resolve();
+              }, 200);
+            }
+          });
+        });
+        getResponseCacheItemsStub = sinon.stub(artifactsDepsResolver._responseCache, 'getItems').callsFake(function () {
+          return manifiestsList;
+        });
+        consoleSpy = sinon.spy(console, 'error');
+      });
+      afterEach(function () {
+        resolveDependenciesStub.restore();
+        getResponseCacheItemsStub.restore();
+        consoleSpy.restore();
+      });
+      it('should return a promise', function () {
+        expect(artifactsDepsResolver.resolveManifestsList(rootDepList, baseUrl)).to.be.an.instanceOf(Promise);
+      });
+      it('should have a \'manifestList\' property', function () {
+        this.timeout(1500);
+        return artifactsDepsResolver.resolveManifestsList(rootDepList, baseUrl).then(function (result) {
+          // Resources list
+          expect(result).to.be.deep.equal(manifiestsList);
+          expect(artifactsDepsResolver.manifestList).to.be.deep.equal(manifiestsList);
+        });
+      });
+      describe('Error Handling', function () {
+        baseUrl = '';
+        afterEach(function () {
+          consoleSpy.restore();
+        });
+        it('should reject returned promise if there is an error resolving single depenencies', function () {
+          return artifactsDepsResolver.resolveManifestsList([{webpackageId: 'error', artifactId: 'util'}], baseUrl).then(function (result) {
+            throw new Error('Promise was unexpectedly fulfilled. Result: ' + result);
+          }, function (error) {
+            expect(consoleSpy).to.be.calledWith('Error while building manifest list: ', error);
           });
         });
       });
