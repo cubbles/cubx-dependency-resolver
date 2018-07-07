@@ -11,6 +11,20 @@ Module for building the rarw dependency tree of a list of root dependencies.
 cubx-dependency-resolver -u <baseUrl> -d <rootDependencies>
 ```
 
+#### Parameters
+* `-u`/`--baseUrl` url of the base where dependencies are hosted
+* `d`/`--rootDependencies` a list of root dependencies (JSON valid), or a path to a JSON file containing the list
+* `-t`/`--type` to CLI accepting the values:
+    * `raw`: returns raw DependencyTree
+    * `resolved`: returns resolved Dependency Tree
+    * `list` (default): return ordered list of resources
+    * `wplist`: return a list of webpackages only (without resources and derived from resolved dependency tree)
+    * `mlist`: return a list of manifests of all webpackages (derived from resolved dependency tree)
+* `-m`/`--mode` to CLI accepting the values (Note: this only applies if parameter `type` is set to value `list`:
+    * `prod` (default): Use only `prod` resources
+    * `dev`: Use only `dev` resources
+
+
 ### Other npm modules
 
 ```javascript
@@ -28,5 +42,5 @@ var rootDependencies = [
 
 var ArtifactsDepsResolver = require('cubx-dependency-resolver');
 var artifactsDepsResolver = new ArtifactsDepsResolver();
-artifactsDepsResolver.buildRawDependencyTree(rootDependencies, baseUrl);
+artifactsDepsResolver.resolveDependencies(rootDependencies, baseUrl);
 ```
