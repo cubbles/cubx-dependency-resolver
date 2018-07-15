@@ -1166,7 +1166,7 @@
       it('should return a promise', function () {
         expect(artifactsDepsResolver.resolveDependencies(rootDepList, baseUrl)).to.be.an.instanceOf(Promise);
       });
-      it('should have a \'resolvedDepTree\' propertie', function () {
+      it('should have a \'resolvedDepTree\' property', function () {
         this.timeout(1500);
         return artifactsDepsResolver.resolveDependencies(rootDepList, baseUrl).then(function (result) {
           artifactsDepsResolver.resolvedDepTree.should.be.an.instanceOf(DependencyTree);
