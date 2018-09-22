@@ -8,7 +8,8 @@ var args = [
   {name: 'rootDependencies', type: String, alias: 'd'},
   {name: 'excludes', type: String, alias: 'e'},
   {name: 'type', type: String, alias: 't'},
-  {name: 'mode', type: String, alias: 'm'}
+  {name: 'mode', type: String, alias: 'm'},
+  {name: 'acr', type: Boolean}
 ];
 
 function parseDependencies (rootDeps, propertyName) {
@@ -70,6 +71,9 @@ if (!options.type) {
 }
 
 var artifactsDepsResolver = new ArtifactsDepsResolver();
+if (options.acr) {
+  artifactsDepsResolver.enableACR();
+}
 switch (options.type) {
   case 'raw':
     artifactsDepsResolver.buildRawDependencyTree(options.rootDependencies, options.baseUrl).then(function (rawDepTree) {
