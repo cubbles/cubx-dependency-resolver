@@ -76,6 +76,10 @@ if (options.acr) {
 }
 switch (options.type) {
   case 'raw':
+    if (options.acr) {
+      console.warn('The Automatic Conflict Resolution (ACR) was enabled, ' +
+      'however, it will not be used since a raw dependency tree will be built.');
+    }
     artifactsDepsResolver.buildRawDependencyTree(options.rootDependencies, options.baseUrl).then(function (rawDepTree) {
       console.log(JSON.stringify(rawDepTree.toJSON(true), null, '   '));
     });
