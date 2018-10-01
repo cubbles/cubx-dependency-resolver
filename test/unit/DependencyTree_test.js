@@ -879,77 +879,7 @@
         childB21.excluded.should.be.false;
       });
     });
-    describe('#getListOfConflictedNodes()', function () {
-      var childA21;
-      var childA211;
-      beforeEach(function () {
-        /**
-         * Adjust depTree to contain two conflicts. Adjusted tree will have the following structure:
-         *
-         *                  package1@1.0.0/util1                                package2@1.0.0/util2
-         *                     /         \                                           /         \
-         *                    /           \                                         /           \
-         *      package3@1.0.0/util3    package4@1.0.0/util4          package3@1.0.0/util3    package5@1.0.0/util5
-         *              |                       |                               |                       |
-         *              |                       |                               |                       |
-         *      package5@1.0.0/util5    package5@2.0.0/util5          package5@1.0.0/util5    package6@1.0.0/util6
-         *              |                       |                               |
-         *              |                       |                               |
-         *      package6@1.0.0/util6    package6@2.0.0/util6          package6@1.0.0/util6
-         *
-         */
-        var pkg5Conflict = {webpackageId: 'package5@2.0.0', artifactId: 'util5'};
-        var pkg6Conflict = {webpackageId: 'package6@2.0.0', artifactId: 'util6'};
-        childA21 = new DependencyTree.Node();
-        childA21.data = new DepReference({ webpackageId: pkg5Conflict.webpackageId, artifactId: pkg5Conflict.artifactId, referrer: packages.pkg4 });
-        childA211 = new DependencyTree.Node();
-        childA211.data = new DepReference({ webpackageId: pkg6Conflict.webpackageId, artifactId: pkg6Conflict.artifactId, referrer: pkg5Conflict });
-        depTree.insertNode(childA21, childA2);
-        depTree.insertNode(childA211, childA21);
-      });
-      it('should log an error when given parameter is not a node from within the current DependencyTree instance', function () {
-        var spy = sinon.spy(console, 'error');
-        depTree.getListOfConflictedNodes({});
-        expect(spy.calledOnce).to.be.true;
-        var node = new DependencyTree.Node();
-        spy.restore();
-        depTree.getListOfConflictedNodes(node);
-        expect(spy.calledOnce).to.be.true;
-        spy.restore();
-      });
-      it('should return an array containing a list of all conflicts found in DependencyTree (using level order traversal)', function () {
-        var conflicts = depTree.getListOfConflictedNodes();
-        conflicts.should.be.instanceof(Array);
-        conflicts.should.have.lengthOf(2);
-        conflicts[0].should.have.property('artifactId', 'util5');
-        conflicts[0].should.have.property('nodes');
-        conflicts[0].nodes[0].should.equal(childB2);
-        conflicts[0].nodes[1].should.equal(childA21);
-        conflicts[1].should.have.property('artifactId', 'util6');
-        conflicts[1].should.have.property('nodes');
-        conflicts[1].nodes[0].should.equal(childB21);
-        conflicts[1].nodes[1].should.equal(childA211);
-      });
-      it('should return an array containing a list of all conflicts found in subtree of given node (using level order traversal)', function () {
-        var conflicts = depTree.getListOfConflictedNodes(nodeA);
-        conflicts.should.be.instanceof(Array);
-        conflicts.should.have.lengthOf(2);
-        conflicts[0].should.have.property('artifactId', 'util5');
-        conflicts[0].should.have.property('nodes');
-        conflicts[0].nodes[0].should.equal(childA11);
-        conflicts[0].nodes[1].should.equal(childA21);
-        conflicts[1].should.have.property('artifactId', 'util6');
-        conflicts[1].should.have.property('nodes');
-        conflicts[1].nodes[0].should.equal(childA111);
-        conflicts[1].nodes[1].should.equal(childA211);
-      });
-      it('should return an empty array if there are no conflicts in subtree of given nodes', function () {
-        var conflicts = depTree.getListOfConflictedNodes(nodeB);
-        conflicts.should.be.instanceof(Array);
-        conflicts.should.have.lengthOf(0);
-      });
-    });
-    describe('#removeDuplicates()', function () {
+    describe('#removeDuplicates() without conflicts', function () {
       it('should return the DependencyTree itself', function () {
         expect(depTree.removeDuplicates()).to.be.an.instanceOf(DependencyTree);
       });
@@ -1079,6 +1009,242 @@
       it('should return the DependencyTree itself', function () {
         expect(depTree.removeExcludes()).to.equal(depTree);
       });
+    });  
+    describe('#_determineNodeRelationShip()', function () {
+      var nodeA;
+      var nodeB;
+      var nodeC;
+      var nodeD;
+      var nodeE;
+      var depTree;
+
+      beforeEach(function () {
+        depTree = new DependencyTree();
+        nodeA = new DependencyTree.Node();
+        nodeA.data = new DepReference({webpackageId: 'packageA@1.0', artifactId: 'artifact_A', referrer: null});
+
+        nodeB = new DependencyTree.Node();
+        nodeB.data = new DepReference({webpackageId: 'packageA@1.0', artifactId: 'artifact_A', referrer: null});
+
+        nodeC = new DependencyTree.Node();
+        nodeC.data = new DepReference({webpackageId: 'packageB@1.0', artifactId: 'artifact_A', referrer: null});
+
+        nodeD = new DependencyTree.Node();
+        nodeD.data = new DepReference({webpackageId: 'packageA@2.0', artifactId: 'artifact_A', referrer: null});
+
+        nodeE = new DependencyTree.Node();
+        nodeE.data = new DepReference({webpackageId: 'packageC@1.0', artifactId: 'artifact_B', referrer: null});
+      });
+
+      it('should identify nodes with relationship "artifact duplicate"', function () {
+        var state = depTree._determineNodeRelationship(nodeA, nodeB);
+        state.should.be.equal(DependencyTree.NodeRelationship.ARTIFACT_DUPLICATE);
+      });
+      it('should identify nodes with relationship "artifact version conflict"', function () {
+        var state = depTree._determineNodeRelationship(nodeA, nodeD);
+        state.should.be.equal(DependencyTree.NodeRelationship.ARTIFACT_VERSION_CONFLICT);
+      });
+      it('should identify nodes with relationship "artifact duplicate"', function () {
+        var state = depTree._determineNodeRelationship(nodeC, nodeD);
+        state.should.be.equal(DependencyTree.NodeRelationship.ARTIFACT_NAME_CONFLICT);
+      });
+      it('should identify nodes with no special relationship to each other', function () {
+        var state = depTree._determineNodeRelationship(nodeA, nodeE);
+        state.should.be.equal(DependencyTree.NodeRelationship.DISTINCT_ARTIFACT);
+      });
     });
-  });
+    describe('#_getRelatedNodes()', function () {
+      var nodeA;
+      var nodeB;
+      var nodeC;
+      var nodeD;
+      var nodes;
+      var depTree;
+
+      beforeEach(function () {
+        depTree = new DependencyTree();
+        nodeA = new DependencyTree.Node();
+        nodeA.data = new DepReference({webpackageId: 'packageA@1.0', artifactId: 'artifact_A', referrer: null});
+
+        nodeB = new DependencyTree.Node();
+        nodeB.data = new DepReference({webpackageId: 'packageB@1.0', artifactId: 'artifact_B', referrer: null});
+
+        nodeC = new DependencyTree.Node();
+        nodeC.data = new DepReference({webpackageId: 'packageC@1.0', artifactId: 'artifact_C', referrer: null});
+
+        nodeD = new DependencyTree.Node();
+        nodeD.data = new DepReference({webpackageId: 'packageD@2.0', artifactId: 'artifact_C', referrer: null});
+
+        nodes = [nodeA, nodeB, nodeC, nodeD];
+      });
+
+      it('should filter given nodes array to return only nodes being in "artifact version conflict" relationship with the given node', function () {
+        var node = new DependencyTree.Node();
+        node.data = new DepReference({webpackageId: 'packageA@2.0', artifactId: 'artifact_A', referrer: null});
+        var results = depTree._getRelatedNodes(node, nodes, DependencyTree.NodeRelationship.ARTIFACT_VERSION_CONFLICT);
+        results.should.be.an('array');
+        results.should.have.members([nodeA]);
+      });
+      it('should filter given nodes array to return only nodes being in "artifact name conflict" relationship with the given node', function () {
+        var node = new DependencyTree.Node();
+        node.data = new DepReference({webpackageId: 'packageE@1.0', artifactId: 'artifact_C', referrer: null});
+        var results = depTree._getRelatedNodes(node, nodes, DependencyTree.NodeRelationship.ARTIFACT_NAME_CONFLICT);
+        results.should.be.an('array');
+        results.should.have.members([nodeC, nodeD]);
+      });
+      it('should filter given nodes array to return only nodes being in "artifact duplicate" relationship with the given node', function () {
+        var node = new DependencyTree.Node();
+        node.data = new DepReference({webpackageId: 'packageB@1.0', artifactId: 'artifact_B', referrer: null});
+        var results = depTree._getRelatedNodes(node, nodes, DependencyTree.NodeRelationship.ARTIFACT_DUPLICATE);
+        results.should.be.an('array');
+        results.should.have.members([nodeB]);
+      });
+      it('should filter given nodes array to return only nodes being in "distinct artifact" relationship with the given node', function () {
+        var node = new DependencyTree.Node();
+        node.data = new DepReference({webpackageId: 'packageE@1.0', artifactId: 'artifact_E', referrer: null});
+        var results = depTree._getRelatedNodes(node, nodes, DependencyTree.NodeRelationship.DISTINCT_ARTIFACT);
+        results.should.be.an('array');
+        results.should.have.members([nodeA, nodeB, nodeC, nodeD]);
+      });
+    });
+    describe('Dependency Tree conflict detection and resolution', function () {
+      var Node = DependencyTree.Node;
+      var DepRef = DepReference;
+      var depTree;
+      var rootA;
+      var rootB;
+      var rootC;
+      var childA1;
+      var childA2;
+      var childA11;
+      var childB1;
+      var childC1;
+      var childC2;
+      var childC3;
+
+      beforeEach(function () {
+        /**
+         * Provide example tree with one version conflict (package5@2.0.0/util5 <--> package5@1.0.0/util5),
+         * one naming conflict (package3@1.0.0/my-comp <--> packageB@2.0.0/my-comp) and one mixed conflict containing a
+         * version conflict (packageC@1.0/artifact_C <--> packageD@1.0/artifact_C <-->  packageD@2.0/artifact_C)
+         * Build the following tree:
+         *
+         *               package1@1.0.0/util1                      packageA@1.0.0/artifactA                              packageB@1.0/artifact_B
+         *                  /            \                                    |                                       /               |          \
+         *                /               \                                   |                                      /                |           \
+         *    package3@1.0.0/my-comp    package5@2.0.0/util5        packageB@2.0.0/my-comp     packageC@1.0/artifact_C   packageD@1.0/artifact_C   packageD@2.0/artifact_C
+         *            |
+         *            |
+         *    package5@1.0.0/util5
+         */
+        depTree = new DependencyTree();
+        rootA = new DependencyTree.Node();
+        rootA.data = new DepReference({webpackageId: 'package1@1.0.0', artifactId: 'util1', referrer: null});
+        depTree.insertNode(rootA);
+
+        rootB = new DependencyTree.Node();
+        rootB.data = new DepReference({webpackageId: 'packageA@1.0.0', artifactId: 'artifactA', referrer: null});
+        depTree.insertNode(rootB);
+
+        rootC = new DependencyTree.Node();
+        rootC.data = new DepReference({webpackageId: 'packageB@1.0', artifactId: 'artifact_B', referrer: null});
+        depTree.insertNode(rootC);
+
+        childA1 = new DependencyTree.Node();
+        childA1.data = new DepReference({
+          webpackageId: 'package3@1.0.0',
+          artifactId: 'my-comp',
+          referrer: {webpackageId: 'package1@1.0.0', artifactId: 'util1'}
+        });
+        depTree.insertNode(childA1, rootA);
+
+        childA2 = new DependencyTree.Node();
+        childA2.data = new DepReference({
+          webpackageId: 'package5@2.0.0',
+          artifactId: 'util5',
+          referrer: {webpackageId: 'package1@1.0.0', artifactId: 'util1'}
+        });
+        depTree.insertNode(childA2, rootA);
+
+        childA11 = new DependencyTree.Node();
+        childA11.data = new DepReference({
+          webpackageId: 'package5@1.0.0',
+          artifactId: 'util5',
+          referrer: {webpackageId: 'package3@1.0.0', artifactId: 'my-comp'}
+        });
+        depTree.insertNode(childA11, childA1);
+
+        childB1 = new DependencyTree.Node();
+        childB1.data = new DepReference({
+          webpackageId: 'packageB@2.0.0',
+          artifactId: 'my-comp',
+          referrer: {webpackageId: 'packageA@1.0.0', artifactId: 'artifactA'}
+        });
+        depTree.insertNode(childB1, rootB);
+
+        childC1 = new DependencyTree.Node();
+        childC1.data = new DepReference({
+          webpackageId: 'packageC@1.0',
+          artifactId: 'artifact_C',
+          referrer: {webpackageId: 'packageB@1.0', artifactId: 'artifact_B'}
+        });
+        depTree.insertNode(childC1, rootC);
+
+        childC2 = new DependencyTree.Node();
+        childC2.data = new DepReference({
+          webpackageId: 'packageD@1.0',
+          artifactId: 'artifact_C',
+          referrer: {webpackageId: 'packageB@1.0', artifactId: 'artifact_B'}
+        });
+        depTree.insertNode(childC2, rootC);
+
+        childC3 = new DependencyTree.Node();
+        childC3.data = new DepReference({
+          webpackageId: 'packageD@2.0',
+          artifactId: 'artifact_C',
+          referrer: {webpackageId: 'packageB@1.0', artifactId: 'artifact_B'}
+        });
+        depTree.insertNode(childC3, rootC);
+      });
+
+      describe('#_removeConflictedNode()', function () {
+        it('should remove conflictedNode and sets usedBy and usesExisting accordnigly', function () {
+          depTree._removeConflictedNode(childA2, childA11);
+          depTree.contains(childA11).should.be.false;
+          childA2.usedBy.should.include.members([childA1]);
+          childA1.usesExisting.should.include.members([childA2]);
+        });
+      });
+
+      describe('#removeDuplicates() with automatic conflict resolution', function () {
+        it('should remove all version conflicted nodes', function () {
+          depTree.enableACR();
+          depTree.removeDuplicates();
+          depTree.contains(rootA).should.be.true;
+          depTree.contains(rootB).should.be.true;
+          depTree.contains(rootC).should.be.true;
+          depTree.contains(childA1).should.be.true;
+          depTree.contains(childA2).should.be.true;
+          depTree.contains(childB1).should.be.true;
+          depTree.contains(childC1).should.be.true;
+          depTree.contains(childC2).should.be.true;
+          depTree.contains(childA11).should.be.false;
+          depTree.contains(childC3).should.be.false;
+        });
+        it('should add all determined conflicts to internal _conflicts array', function () {
+          depTree.enableACR();
+          depTree.removeDuplicates();
+          var conflicts = depTree.getConflictedNodes();
+          conflicts.should.have.lengthOf(5);
+          conflicts.should.include.deep.members([
+            {node: childC2, conflictedNode: childC3, type: DependencyTree.conflictTypes.VERSION, resolved: true},
+            {node: childA2, conflictedNode: childA11, type: DependencyTree.conflictTypes.VERSION, resolved: true},
+            {node: childA1, conflictedNode: childB1, type: DependencyTree.conflictTypes.NAME, resolved: false},
+            {node: childC1, conflictedNode: childC2, type: DependencyTree.conflictTypes.NAME, resolved: false},
+            {node: childC1, conflictedNode: childC3, type: DependencyTree.conflictTypes.NAME, resolved: false}
+          ]);
+        });
+      });
+    });
+});
 })();
