@@ -1009,7 +1009,7 @@
       it('should return the DependencyTree itself', function () {
         expect(depTree.removeExcludes()).to.equal(depTree);
       });
-    });  
+    });
     describe('#_determineNodeRelationShip()', function () {
       var nodeA;
       var nodeB;
@@ -1108,8 +1108,6 @@
       });
     });
     describe('Dependency Tree conflict detection and resolution', function () {
-      var Node = DependencyTree.Node;
-      var DepRef = DepReference;
       var depTree;
       var rootA;
       var rootB;
@@ -1246,5 +1244,5 @@
         });
       });
     });
-});
+  });
 })();
