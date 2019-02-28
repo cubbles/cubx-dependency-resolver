@@ -821,10 +821,11 @@
       var item1;
       var item2;
       var item3;
+      const baseUrl = 'https://cubbles.world/sandbox/';
       before(function () {
         // add an dependencyExclude to rootDependencies
         artifactsDepsResolver = new ArtifactsDepsResolver();
-        artifactsDepsResolver._baseUrl = 'https://cubbles.world/sandbox//';
+        artifactsDepsResolver.setBaseUrl(baseUrl);
         artifactsDepsResolver._runtimeMode = 'prod';
       });
       beforeEach(function () {
@@ -869,24 +870,24 @@
           var resourceList = artifactsDepsResolver._calculateResourceList(internalDepList);
           resourceList.should.have.length(7);
           resourceList[ 0 ].should.have.property('path',
-            artifactsDepsResolver._baseUrl + item1.webpackageId + '/' + item1.artifactId + '/' + item1.resources[ 0 ]);
+            baseUrl + item1.webpackageId + '/' + item1.artifactId + '/' + item1.resources[ 0 ]);
           resourceList[ 1 ].should.have.property('path',
-            artifactsDepsResolver._baseUrl + item1.webpackageId + '/' + item1.artifactId + '/' +
+            baseUrl + item1.webpackageId + '/' + item1.artifactId + '/' +
             item1.resources[ 1 ].prod);
           resourceList[ 2 ].should.have.property('path',
-            artifactsDepsResolver._baseUrl + item1.webpackageId + '/' + item1.artifactId + '/' + item1.resources[ 2 ]);
+            baseUrl + item1.webpackageId + '/' + item1.artifactId + '/' + item1.resources[ 2 ]);
           resourceList[ 3 ].should.have.property('path',
-            artifactsDepsResolver._baseUrl + item2.webpackageId + '/' + item2.artifactId + '/' +
+            baseUrl + item2.webpackageId + '/' + item2.artifactId + '/' +
             item2.resources[ 0 ].prod);
           resourceList[ 4 ].should.have.property('path',
-            artifactsDepsResolver._baseUrl + item2.webpackageId + '/' + item2.artifactId + '/' + item2.resources[ 1 ]);
+            baseUrl + item2.webpackageId + '/' + item2.artifactId + '/' + item2.resources[ 1 ]);
           resourceList[ 5 ].should.have.property('path',
-            artifactsDepsResolver._baseUrl + item2.webpackageId + '/' + item2.artifactId + '/' + item2.resources[ 2 ]);
+            baseUrl + item2.webpackageId + '/' + item2.artifactId + '/' + item2.resources[ 2 ]);
         });
       it('should ignore endpointId appendix on artifacts that where converted by the manifestConverter', function () {
         var resourceList = artifactsDepsResolver._calculateResourceList(internalDepList);
         resourceList[ 6 ].should.have.property('path',
-          artifactsDepsResolver._baseUrl + item3.webpackageId + '/util/' + item3.resources[ 0 ]);
+          baseUrl + item3.webpackageId + '/util/' + item3.resources[ 0 ]);
       });
       afterEach(function () {
         internalDepList = [];
@@ -904,7 +905,7 @@
       before(function () {
         // add an dependencyExclude to rootDependencies
         artifactsDepsResolver = new ArtifactsDepsResolver();
-        artifactsDepsResolver._baseUrl = 'https://cubbles.world/sandbox/';
+        artifactsDepsResolver.setBaseUrl('https://cubbles.world/sandbox/');
       });
       beforeEach(function () {
         var testReferrer = {
@@ -942,7 +943,7 @@
       var stringItem = 'test.css';
       before(function () {
         artifactsDepsResolver = new ArtifactsDepsResolver();
-        artifactsDepsResolver._baseUrl = '';
+        artifactsDepsResolver.setBaseUrl('');
       });
       it('should throw TypeError', function () {
         expect(artifactsDepsResolver._createResourceFromItem).to.throw(TypeError);
@@ -951,30 +952,31 @@
         var resource = artifactsDepsResolver._createResourceFromItem(id, item, 'prod');
         expect(resource).to.have.property('path');
         expect(resource).to.have.property('type');
-        expect(resource.path).to.equal(id + '/' + item.prod);
+        expect(resource.path).to.equal('/' + id + '/' + item.prod);
         expect(resource.type).to.equal('javascript');
       });
       it('should create a new resource containing file and type for item given as string', function () {
         var resource = artifactsDepsResolver._createResourceFromItem(id, stringItem, 'prod');
         expect(resource).to.have.property('path');
         expect(resource).to.have.property('type');
-        expect(resource.path).to.equal(id + '/' + stringItem);
+        expect(resource.path).to.equal('/' + id + '/' + stringItem);
         expect(resource.type).to.equal('stylesheet');
       });
       it('should use "prod" file path if parameter "runtimeMode" has value "prod"', function () {
         var resource = artifactsDepsResolver._createResourceFromItem(id, item, 'prod');
-        expect(resource.path).to.equal(id + '/' + item.prod);
+        expect(resource.path).to.equal('/' + id + '/' + item.prod);
       });
       it('should use "dev" file path if parameter "runtimeMode" has value "dev"', function () {
         var resource = artifactsDepsResolver._createResourceFromItem(id, item, 'dev');
-        expect(resource.path).to.equal(id + '/' + item.dev);
+        expect(resource.path).to.equal('/' + id + '/' + item.dev);
       });
       it('should add the baseUrl as prefix for all files if some url is given', function () {
-        artifactsDepsResolver._baseUrl = 'https://cubbles.world/sandbox//';
+        const baseUrl = 'https://cubbles.world/sandbox/';
+        artifactsDepsResolver.setBaseUrl(baseUrl);
         var resource = artifactsDepsResolver._createResourceFromItem(id, item, 'prod');
-        resource.should.have.property('path', artifactsDepsResolver._baseUrl + id + '/' + item.prod);
+        resource.should.have.property('path', baseUrl + id + '/' + item.prod);
         resource.should.have.property('type', 'javascript');
-        artifactsDepsResolver._baseUrl = '';
+        artifactsDepsResolver.setBaseUrl('');
       });
     });
     describe('#_determineResourceType()', function () {
