@@ -203,11 +203,13 @@
                   artifactId: 'comp-c',
                   children: [],
                   usesExisting: [],
-                  usedBy: []
+                  usedBy: [],
+                  excluded: false
                 }
               ],
               usesExisting: [],
-              usedBy: []
+              usedBy: [],
+              excluded: false
             },
             {
               webpackageId: 'com.example.package2@1.0',
@@ -218,18 +220,21 @@
                   artifactId: 'comp-a',
                   children: [],
                   usesExisting: [],
-                  usedBy: []
+                  usedBy: [],
+                  excluded: false
                 },
                 {
                   webpackageId: 'com.example.packageB@1.0',
                   artifactId: 'comp-b',
                   children: [],
                   usesExisting: [],
-                  usedBy: []
+                  usedBy: [],
+                  excluded: false
                 }
               ],
               usesExisting: [],
-              usedBy: []
+              usedBy: [],
+              excluded: false
             }
           ]
         });
@@ -257,11 +262,13 @@
                   resources: ['index.html'],
                   children: [],
                   usesExisting: [],
-                  usedBy: []
+                  usedBy: [],
+                  excluded: false
                 }
               ],
               usesExisting: [],
-              usedBy: []
+              usedBy: [],
+              excluded: false
             },
             {
               webpackageId: 'com.example.package2@1.0',
@@ -274,7 +281,8 @@
                   resources: ['js/main.js', 'css/style.css'],
                   children: [],
                   usesExisting: [],
-                  usedBy: []
+                  usedBy: [],
+                  excluded: false
                 },
                 {
                   webpackageId: 'com.example.packageB@1.0',
@@ -282,11 +290,13 @@
                   resources: [],
                   children: [],
                   usesExisting: [],
-                  usedBy: []
+                  usedBy: [],
+                  excluded: false
                 }
               ],
               usesExisting: [],
-              usedBy: []
+              usedBy: [],
+              excluded: false
             }
           ]
         });
@@ -329,15 +339,18 @@
                           webpackageId: 'com.example.packageB@1.0',
                           artifactId: 'comp-b'
                         }
-                      ]
+                      ],
+                      excluded: false
                     }
                   ],
                   usesExisting: [],
-                  usedBy: []
+                  usedBy: [],
+                  excluded: false
                 }
               ],
               usesExisting: [],
-              usedBy: []
+              usedBy: [],
+              excluded: false
             },
             {
               webpackageId: 'com.example.package2@1.0',
@@ -348,7 +361,8 @@
                   artifactId: 'comp-a',
                   children: [],
                   usesExisting: [],
-                  usedBy: []
+                  usedBy: [],
+                  excluded: false
                 },
                 {
                   webpackageId: 'com.example.packageB@1.0',
@@ -360,11 +374,13 @@
                       artifactId: 'comp-d'
                     }
                   ],
-                  usedBy: []
+                  usedBy: [],
+                  excluded: false
                 }
               ],
               usesExisting: [],
-              usedBy: []
+              usedBy: [],
+              excluded: false
             }
           ]
         });
@@ -522,11 +538,13 @@
                     artifactId: 'comp-f',
                     children: [],
                     usesExisting: [],
-                    usedBy: []
+                    usedBy: [],
+                    excluded: false
                   }
                 ],
                 usesExisting: [],
-                usedBy: []
+                usedBy: [],
+                excluded: false
               },
               {
                 webpackageId: 'com.example.packageB@1.0',
@@ -537,22 +555,26 @@
                     artifactId: 'comp-g',
                     children: [],
                     usesExisting: [],
-                    usedBy: []
+                    usedBy: [],
+                    excluded: false
                   },
                   {
                     webpackageId: 'com.example.packageH@1.0',
                     artifactId: 'comp-h',
                     children: [],
                     usesExisting: [],
-                    usedBy: []
+                    usedBy: [],
+                    excluded: false
                   }
                 ],
                 usesExisting: [],
-                usedBy: []
+                usedBy: [],
+                excluded: false
               }
             ],
             usesExisting: [],
-            usedBy: []
+            usedBy: [],
+            excluded: false
           }
         );
       });
@@ -584,11 +606,13 @@
                     resources: ['index.html'],
                     children: [],
                     usesExisting: [],
-                    usedBy: []
+                    usedBy: [],
+                    excluded: false
                   }
                 ],
                 usesExisting: [],
-                usedBy: []
+                usedBy: [],
+                excluded: false
               },
               {
                 webpackageId: 'com.example.packageB@1.0',
@@ -601,7 +625,8 @@
                     resources: [],
                     children: [],
                     usesExisting: [],
-                    usedBy: []
+                    usedBy: [],
+                    excluded: false
                   },
                   {
                     webpackageId: 'com.example.packageH@1.0',
@@ -609,15 +634,18 @@
                     resources: [],
                     children: [],
                     usesExisting: [],
-                    usedBy: []
+                    usedBy: [],
+                    excluded: false
                   }
                 ],
                 usesExisting: [],
-                usedBy: []
+                usedBy: [],
+                excluded: false
               }
             ],
             usesExisting: [],
-            usedBy: []
+            usedBy: [],
+            excluded: false
           }
         );
       });
@@ -651,11 +679,13 @@
                     artifactId: 'comp-f',
                     children: [],
                     usesExisting: [{webpackageId: 'com.example.packageG@1.0', artifactId: 'comp-g'}],
-                    usedBy: []
+                    usedBy: [],
+                    excluded: false
                   }
                 ],
                 usesExisting: [{webpackageId: 'com.example.packageH@1.0', artifactId: 'comp-h'}],
-                usedBy: []
+                usedBy: [],
+                excluded: false
               },
               {
                 webpackageId: 'com.example.packageB@1.0',
@@ -666,22 +696,26 @@
                     artifactId: 'comp-g',
                     children: [],
                     usesExisting: [],
-                    usedBy: [{webpackageId: 'com.example.packageF@1.0', artifactId: 'comp-f'}]
+                    usedBy: [{webpackageId: 'com.example.packageF@1.0', artifactId: 'comp-f'}],
+                    excluded: false
                   },
                   {
                     webpackageId: 'com.example.packageH@1.0',
                     artifactId: 'comp-h',
                     children: [],
                     usesExisting: [],
-                    usedBy: [{webpackageId: 'com.example.packageA@1.0', artifactId: 'comp-a'}]
+                    usedBy: [{webpackageId: 'com.example.packageA@1.0', artifactId: 'comp-a'}],
+                    excluded: false
                   }
                 ],
                 usesExisting: [],
-                usedBy: []
+                usedBy: [],
+                excluded: false
               }
             ],
             usesExisting: [],
-            usedBy: []
+            usedBy: [],
+            excluded: false
           }
         );
       });
