@@ -7,8 +7,14 @@ Module for building the rarw dependency tree of a list of root dependencies.
 ## Usage: 
 ### Command line: 
 
-```
+```bash
 cubx-dependency-resolver -u <baseUrl> -d <rootDependencies>
+```
+
+For instance:
+
+```bash
+cubx-dependency-resolver -u 'https://cubbles.world/sandbox' -d '[{ "webpackageId": "com.incowia.cubx-webpackage-viewer@2.0.0-SNAPSHOT", "artifactId": "cubx-structure-viewer" }]'
 ```
 
 #### Parameters
